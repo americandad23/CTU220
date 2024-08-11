@@ -1,4 +1,4 @@
-name: Simple CI/CD Pipeline
+name: Simulated CI/CD Pipeline
 
 # Define the events that trigger the workflow
 on:
@@ -20,9 +20,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # Step to print "Hello World" to indicate the build stage
-      - name: Print Hello World
-        run: echo "Hello World - Build Stage"
+      # Step to simulate a failure in the build stage
+      - name: Simulate Build Failure
+        run: |
+          echo "Simulating build failure..."
+          exit 1  # Exits with a non-zero status to simulate failure
 
     # Add notification step for failure
     if: failure()
