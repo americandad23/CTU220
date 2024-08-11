@@ -1,0 +1,84 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main  # Trigger the workflow on push to the main branch
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      
+    - name: Set up .NET Core
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: '6.x'  # Change this to the version you are using
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Build
+      run: dotnet build --no-restore
+
+    - name: Generate Artifacts
+      run: dotnet publish -c Release -o ./publish
+
+  test:
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up .NET Core
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: '6.x'  # Change this to the version you are using
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Run Unit Tests
+      run: dotnet test --no-build --verbosity normal
+
+    - name: Code Quality Check
+      run: dotnet tool install --global dotnet-codecov && codecov -f ./TestResults/*.xml
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: test
+    if: success()  # Only deploy if the test job succeeded
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up .NET Core
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: '6.x'  # Change this to the version you are using
+
+    - name: Deploy to Staging
+      run: |
+        echo "Deploying to staging environment..."
+        # Add your deployment scripts or commands here
+        # For example: ./deploy.sh staging
+
+  notify:
+    runs-on: ubuntu-latest
+    if: failure()  # Run this job if any of the previous jobs fail
+    needs: [build, test, deploy]
+
+    steps:
+    - name: Send Failure Notification
+      uses: peter-evans/notify@v1
+      with:
+        status: failure
+        message: 'Build or deployment failed in the CI/CD pipeline.'
+        recipient: 'your-team@example.com'
+        subject: 'CI/CD Pipeline Failure Notification'
